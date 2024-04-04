@@ -1,0 +1,22 @@
+Un sistema operativo mantiene 5 instancias de un recurso almacenadas en una cola, cuando
+un proceso necesita usar una instancia del recurso la saca de la cola, la usa y cuando termina
+de usarla la vuelve a depositar. 
+
+sem mutex=5;
+cola C={c1,c2,c3,c4,c5};
+sem accio=1; //NO OLVIDARSE DE ESTE SEMAFORO
+
+process p[id:1..N]{
+    Recurso R;
+    //Trabajo
+    P(Mutex);
+    P(accio);
+    Pop(C,R);
+    V(accio);
+    //Uso
+    P(accio);
+    Push(C,R);
+    V(accio);
+    V(Mutex);
+    //Trabajo
+}

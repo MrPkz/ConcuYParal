@@ -1,0 +1,30 @@
+5. Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. En un
+examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza
+el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los
+profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando
+el orden en que los alumnos van entregando.
+
+int llegada=0;
+int corregidos=0;
+int[N] notas=([n] -1);
+colaMagica C;
+
+Process Alumno[id:0..N-1]
+{
+	<llegada=llegada+1>;
+	<Await llegada==N>;
+	//Resuelve Examen
+	//Entrega Examen
+	<Agregar(C,id)>;
+<Await (notas[id]!=-1)>;
+}
+
+Process Profesores[id:0..2]
+{	int exa;
+	while(corregidos<n){
+	<Await (!empty(C)or(corregidos==n)) if(corregidos==n) break; else exa=Sacar(C)>;
+	int nota=CorrigeExamen(exa);
+	notas[exa]=nota;
+	<corregidos=corregidos+1>;
+}
+}

@@ -1,0 +1,49 @@
+Se tiene un curso con 40 alumnos, la maestra entrega una tarea distinta a cada alumno, luego
+cada alumno realiza su tarea y se la entrega a la maestra para que la corrija, esta revisa la tarea
+y si está bien le avisa al alumno que puede irse, si la tarea está mal le indica los errores, el
+alumno corregirá esos errores y volverá a entregarle la tarea a la maestra para que realice la
+corrección nuevamente, esto se repite hasta que la tarea no tenga errores.
+
+sem espera[40]=([40] 0);
+sem fin[40]=([40] 0);
+tareas t[40];
+sem maestra=0;
+int final=40;
+cola C;
+sem mutexcontador=1;
+sem mutexcola=1;
+
+Process alumno[id:1..40]{
+    Tarea rta; //declaro la variable para guardar la tarea
+    P(espera[id]); //espera la tarea
+    while(!fin[id]){ //mientras no este bien
+        rta=t[id]; //acá recupera la tarea a hacer
+        //resuelve tarea 
+        P(mutexcola);  //reserva la cola
+        Push(c,id,rta) //entrega
+        V(mutexcola);  //sale de la cola
+        V(maestra);    //avisa a la maestra
+        P(espera[id]); //espera el feedback
+    }
+    P(mutexcontador);
+    final--;
+    V(mutexcontador); //actualiza contador
+}
+
+Process maestra{
+    int alumnito,deber; //acá guardo lo que me entregan
+    for(i=1 to 40){  //asigna tareas y despierta a los alumnos
+        t[i]=tarea;
+        V(espera[id]);
+    }
+    while(final>0){
+        P(maestra); //espero a que me llamen
+        P(mutexcola);
+        Pop(c,alumnito,deber); //recibe
+        V(mutexcola);  //recibo tarea y salgo de la cola
+        //corrige
+        if(está bien){fin[alumnito]=1;}
+        t[alumnito]={tarea corregida}; //le dejo la tarea
+        V(espera[alumnito]); //lo despierta otra vez al alumno corregido
+    }
+}

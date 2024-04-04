@@ -1,0 +1,31 @@
+7. Desarrolle una solución de grano fino usando sólo variables compartidas (no se puede usar
+las sentencias await ni funciones especiales como TS o FA). En base a lo visto en la clase 2
+de teoría, resuelva el problema de acceso a sección crítica usando un proceso coordinador.
+En este caso, cuando un proceso SC[i] quiere entrar a su sección crítica le avisa al coordinador,
+y espera a que éste le dé permiso. Al terminar de ejecutar su sección crítica, el proceso SC[i]
+le avisa al coordinador. Nota: puede basarse en la solución para implementar barreras con
+Flags y Coordinador vista en la teoría 2.
+
+int llego[0..N-1]=([n] 0), permiso[0..N-1]=([n] 0);
+
+Process SC[id:0..N-1]{
+	while(true){
+llego[i]=1;
+	while(permiso[i]==0) skip;
+	//USO SC
+	llego[i]=0;
+	//Sigue
+	}
+}
+
+Process Coordinador{
+	while(true){
+		for([i=1 to n]{
+			if(llego[i]==1){
+				permiso[i]=1;
+                while(llego[i]==1) skip;
+				permiso[i]=0; //Acá o en el otro
+			}
+}
+	}
+}

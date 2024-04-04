@@ -1,0 +1,15 @@
+2. Realice una solución concurrente de grano grueso (utilizando <> y/o <await B; S>) para el
+siguiente problema. Dado un numero N verifique cuantas veces aparece ese número en un
+arreglo de longitud M. Escriba las condiciones que considere necesarias.
+
+int numero =N;
+int[M] arreglo;
+int total=0;
+
+Process Busco[id: 0..N-1]
+{
+	if(arreglo[ID]==N) then
+    {
+		<Total=Total+1>;
+    }
+}

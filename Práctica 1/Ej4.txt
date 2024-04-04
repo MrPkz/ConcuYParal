@@ -1,0 +1,80 @@
+4. En cada ítem debe realizar una solución concurrente de grano grueso (utilizando <> y/o
+<await B; S>) para el siguiente problema, teniendo en cuenta las condiciones indicadas en el
+item. Existen N personas que deben imprimir un trabajo cada una.
+a) Implemente una solución suponiendo que existe una única impresora compartida por
+todas las personas, y las mismas la deben usar de a una persona a la vez, sin importar el
+orden. Existe una función Imprimir(documento) llamada por la persona que simula el uso
+de la impresora. Sólo se deben usar los procesos que representan a las Personas.
+
+bool Libre=True;
+
+Process Trabajo[id:1..N]
+{
+	<Await (Libre==True) Libre=False;>;
+	Imprimir(documento);
+	Libre=True;
+}
+
+b) Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+colaMagica c;
+int next=0;
+
+Process Trabajo[id:1..N]
+{
+	<if(next==0)then {next=id;}else{Agregar(c,id);}>;
+	<Await (next==id)>;
+	Imprimir(documento);
+	<if(!empty(c)){next=Sacar(c);}else{next=0}>;
+}
+
+c) Modifique la solución de (b) para el caso en que se deba respetar el orden de llegada pero
+dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
+debe usar la persona de mayor edad entre las que hayan solicitado su uso).
+
+arbolMagico a; //Podría ser una minheap?
+int next=0;
+
+Process Trabajo[id:1..N]
+{
+	<if(next==0)then {next=id;}else{Agregar(a,edad,id);}>;
+	<Await (next==id)>;
+	Imprimir(documento);
+	<if(!empty(a)){next=Sacar(a);}else{next=0}>;
+}
+
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
+no haya terminado de usarla la persona X-1).
+
+Process Trabajo[id:1..N]
+{
+	<Await (Next==id)>;
+	Imprimir(documento);
+	Next=Next+1;
+}
+
+e) Modifique la solución de (c) para el caso en que además hay un proceso Coordinador que
+le indica a cada persona cuando puede usar la impresora.
+
+arbolMagico a;
+bool Libre=True;
+int next=0;
+
+Process Trabajo[id:1..N]
+{
+	<Agregar(a,edad,id)>;
+	<Await (next==id)>;
+	Imprimir(documento);
+    <Next:=0>;
+	Libre=True;
+}
+
+Process Coordi
+{
+	while(true){
+	<await (!empty(a)and(Libre))>;
+	next=sacar(a);
+	Libre=False;
+	}
+}
