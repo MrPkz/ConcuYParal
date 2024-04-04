@@ -1,4 +1,4 @@
-5. Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. En un
+Resolver con SENTENCIAS AWAIT (<> y/o <await B; S>) el siguiente problema. En un
 examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado comienza
 el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de los
 profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes respectando
