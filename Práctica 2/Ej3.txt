@@ -6,9 +6,9 @@ corrección nuevamente, esto se repite hasta que la tarea no tenga errores.
 
 sem espera[40]=([40] 0);
 sem fin[40]=([40] 0);
-tareas t[40];
+Tarea t[40];
 sem maestra=0;
-int final=40;
+//int final=40;
 cola C;
 sem mutexcontador=1;
 sem mutexcola=1;
@@ -20,18 +20,18 @@ Process alumno[id:1..40]{
         rta=t[id]; //acá recupera la tarea a hacer
         //resuelve tarea 
         P(mutexcola);  //reserva la cola
-        Push(c,id,rta) //entrega
+        Push(c,id,rta) //entrega                                                    Está bien esta sintaxis mezclada?
         V(mutexcola);  //sale de la cola
         V(maestra);    //avisa a la maestra
         P(espera[id]); //espera el feedback
     }
-    P(mutexcontador);
-    final--;
-    V(mutexcontador); //actualiza contador
+    //P(mutexcontador);
+    //final--;
+    //V(mutexcontador); //actualiza contador
 }
 
 Process maestra{
-    int alumnito,deber; //acá guardo lo que me entregan
+    int alumnito,deber,final=40; //acá guardo lo que me entregan
     for(i=1 to 40){  //asigna tareas y despierta a los alumnos
         t[i]=tarea;
         V(espera[id]);
@@ -42,7 +42,7 @@ Process maestra{
         Pop(c,alumnito,deber); //recibe
         V(mutexcola);  //recibo tarea y salgo de la cola
         //corrige
-        if(está bien){fin[alumnito]=1;}
+        if(está bien){fin[alumnito]=1; final--;}
         t[alumnito]={tarea corregida}; //le dejo la tarea
         V(espera[alumnito]); //lo despierta otra vez al alumno corregido
     }
