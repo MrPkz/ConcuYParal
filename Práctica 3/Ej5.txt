@@ -1,0 +1,109 @@
+5) Suponga una comisión con 50 alumnos. Cuando los alumnos llegan forman una fila, una
+vez que están los 50 en la fila el jefe de trabajos prácticos les entrega el número de grupo
+(número aleatorio del 1 al 25) de tal manera que dos alumnos tendrán el mismo número de
+grupo (suponga que el jefe posee una función DarNumero() que devuelve en forma aleatoria
+un número del 1 al 25, el jefe de trabajos prácticos no guarda el número que le asigna a
+cada alumno). Cuando un alumno ha recibido su número de grupo comienza a realizar la
+práctica. Al terminar de trabajar, el alumno le avisa al jefe de trabajos prácticos y espera la
+nota. El jefe de trabajos prácticos, cuando han llegado los dos alumnos de un grupo les
+devuelve a ambos la nota del GRUPO (el primer grupo en terminar tendrá como nota 25, el
+segundo 24, y así sucesivamente hasta el último que tendrá nota 1).
+
+Process Alumno[id:1..50]{
+    //llega
+    Asigno.llegada(id,grupo);
+    //Hace la tarea
+    Devolucion.aviso(grupo,nota);
+}
+
+Process JTP{
+    bool fin=false;
+    int cupos[25]=([25] 2);
+    bool puedo;
+    for(int j=1:50){ 
+        puedo=false;
+        while(!puedo){
+            aux=DarNumero();
+            if(cupos[aux]>0){
+                cupos[aux]--;
+                puedo=true;
+            }
+        }
+        Asigno.doynumeros(aux);
+    }
+    while(!fin){
+        Devolucion.corrijo(fin);
+    }
+}
+
+Monitor Asigno{
+    int cont=0;
+    int grupos[50]=([50] 0);
+    
+    int estu;
+    int aux;
+    bool puedo;
+    bool tamoready=false;
+
+    cond llegada;
+    cond docente;
+    cola C;
+    cond sigo;
+
+    Process llegada(i:in int, g: out int){
+        cont++;
+        Push(C,i);
+        if(cont==50){
+            tamoready=true;
+            signal(docente);
+        }
+        wait(llegada);
+        g=grupos[i];
+        signal(sigo);
+    }
+
+    Process doynumeros(aux:in int){
+        if(!tamoready){wait(docente);}               //Corresponde que los alumnos salgan todos juntos? O salen de a uno? 
+        Pop(C,estu);
+        grupos[estu]=aux;
+        signal(llegada);            
+        wait(sigo);
+    }
+
+}
+
+Monitor Devolucion{
+    int proxnota=25;
+    int llegados[25]=([25] 0);
+    int espera=0;
+    int cont=50;
+    int notas[25]=([25] 0);
+    int aux;
+
+    cond grupitos[25];
+    cond docente;
+    cola C;
+
+    Process aviso(g: in int, n: out int){
+        Push(C,g);
+        espera++;
+        if(espera==1){signal(docente);}     //No hace falta el if
+        wait(grupitos[g]);
+        n=notas[g];
+    }
+
+    Process corrijo(f: out bool){
+        if(espera==0){wait(docente);}
+        Pop(C,aux);
+        llegados[aux]++;
+        if(llegados[aux]==2){
+            notas[aux]=proxnota;            //Si hubiese correccion hay que hacerla fuera del monitor. Implica 2 procesos diferentes
+            proxnota--;
+            signal_all(grupitos[aux]);
+        }
+        cont--;
+        if(cont>0){f=false;}
+        else{f=true;}
+    }
+
+}

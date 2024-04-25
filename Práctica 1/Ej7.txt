@@ -10,22 +10,23 @@ int llego[0..N-1]=([n] 0), permiso[0..N-1]=([n] 0);
 
 Process SC[id:0..N-1]{
 	while(true){
-llego[i]=1;
+	llego[i]=1;
 	while(permiso[i]==0) skip;
 	//USO SC
-	llego[i]=0;
+	permiso[i]=0; //Acá o en el otro.
 	//Sigue
 	}
 }
 
 Process Coordinador{
 	while(true){
-		for([i=1 to n]{
+		for(i=1 to n){
 			if(llego[i]==1){
+				llego[i]=0;
 				permiso[i]=1;
-                while(llego[i]==1) skip;
-				permiso[i]=0; //Acá o en el otro
+                while(permiso[i]==1) skip;
+			 	//El permiso acá funcionaría porque hay un scheduling fair
 			}
-}
+		}
 	}
 }

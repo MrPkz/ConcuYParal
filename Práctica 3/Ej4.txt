@@ -1,0 +1,84 @@
+4) En una mesa de exámenes hay 3 profesores que les deben tomar un examen oral a 30 alumnos
+de acuerdo al orden de llegada. Cada examen es tomado por un único profesor. Cuando un
+alumno llega, espera a que alguno de los profesores (cualquiera) lo llame y se dirige al
+escritorio correspondiente a ese profesor, donde le tomará el examen; al terminar el
+profesor le da la nota y el alumno se retira. Cuando un profesor está libre llama al siguiente
+alumno. Nota: todos los procesos deben terminar su ejecución. 
+
+Process Alumno[id:1..30]{
+    //Arriva al aula
+    Llamado.llegue(profe);
+    Devolucion[profe].rindo();
+}
+
+Process Profesor[id:1..3]{
+    bool fin=true; //para saber terminar
+    Llamado.llamo(id,fin);
+    while(fin){
+        Devolucion[id].tomo();
+        Llamado.llamo(id,fin);
+    }
+}
+
+Monitor Llamado{
+    int contador=0;
+    int espera=0;
+    cola C;
+    cond momentodecrisis;
+    cond apurenseloco;
+    int profea[31]=([31] 0);
+
+    Process llegue(i: in int, n: out int){
+        espera++;                   //Avisa que hay alguien
+        Push(C,i);                  //Dejo mi id
+        signal(apurenseloco);       //Despierta a profes pendientes
+        wait(momentodecrisis);      //Espero
+        n=profea[i];                //Saco el profe que me toma
+    }
+
+    Process llamo(i: in int, f: out bool){
+        if(!espera){wait(apurenseloco);}                        //No haría falta el if, no?   CONSULTAR
+        if(contador==30){
+            f=false;                                            //Rompo iteracion
+        }else{
+            Pop(C,auxi);                                        //Saco alumno
+            profea[auxi]=i;                                     //Le escribo a quien va
+            f=true;                                             //Me llevo que todavia no termine
+            espera--;                                           //Saco a la persona de la fila para los otros profes
+            contador++;                                         //Sumo uno a los llamados
+            if(contador==30){signal_all(apurenseloco);}      //Hago que quienes siguen esperando se vayan
+            signal(momentodecrisis);                            //Llamo al alumne
+        }
+    }
+}
+
+Monitor Devolucion[id:1..3]{
+    cond ping;
+    cond pong;
+
+    bool lleguep=false;
+    bool lleguea=false;
+
+    Process tomo(){
+        lleguep=true;
+        if(!lleguea){wait(ping);}
+        signal(pong);
+        wait(ping);
+        //corrige
+        signal(pong);
+        lleguep=false;
+        //este es todo el proceso de rendir, reiteradas veces
+    }
+
+    Process rindo(){
+        lleguea=true;
+        if(lleguep){signal(ping);}
+        wait(pong);
+        
+        signal(ping);
+        wait(pong); //Podría agregar la nota acá
+        //Este es todo el proceso de rendir, reiteradas veces
+
+    }
+
+}

@@ -8,6 +8,7 @@ int llegada=0;
 int corregidos=0;
 int[N] notas=([n] -1);
 colaMagica C;
+bool fin=false;
 
 Process Alumno[id:0..N-1]
 {
@@ -16,15 +17,15 @@ Process Alumno[id:0..N-1]
 	//Resuelve Examen
 	//Entrega Examen
 	<Agregar(C,id)>;
-<Await (notas[id]!=-1)>;
+	<Await (notas[id]!=-1)>;
 }
 
 Process Profesores[id:0..2]
 {	int exa;
 	while(corregidos<n){
-	<Await (!empty(C)or(corregidos==n)) if(corregidos==n) break; else exa=Sacar(C)>;
-	int nota=CorrigeExamen(exa);
+	<Await (!empty(C)or(fin)) if(!fin) exa=Sacar(C)>;		//Puedo usar break en esta práctica? Rta: no
+	if(!fin){int nota=CorrigeExamen(exa);}					//No puede cambiar en este preciso momento
 	notas[exa]=nota;
-	<corregidos=corregidos+1>;
-}
+	<corregidos=corregidos+1; if(corregidos==n) fin=true;>
+	}
 }

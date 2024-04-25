@@ -11,7 +11,7 @@ bool Libre=True;
 
 Process Trabajo[id:1..N]
 {
-	<Await (Libre==True) Libre=False;>;
+	<Await (Libre==True) Libre=False;>;		//Consultar tema de los ;
 	Imprimir(documento);
 	Libre=True;
 }
@@ -33,12 +33,12 @@ c) Modifique la solución de (b) para el caso en que se deba respetar el orden d
 dando prioridad de acuerdo a la edad de cada persona (cuando la impresora está libre la
 debe usar la persona de mayor edad entre las que hayan solicitado su uso).
 
-arbolMagico a; //Podría ser una minheap?
+colaOrdenada a;
 int next=0;
 
 Process Trabajo[id:1..N]
 {
-	<if(next==0)then {next=id;}else{Agregar(a,edad,id);}>;
+	<if(next==0)then {next=id;}else{Agregar(a,edad,id);}>
 	<Await (next==id)>;
 	Imprimir(documento);
 	<if(!empty(a)){next=Sacar(a);}else{next=0}>;
@@ -47,6 +47,8 @@ Process Trabajo[id:1..N]
 d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
 dado por el identificador del proceso (la persona X no puede usar la impresora hasta que
 no haya terminado de usarla la persona X-1).
+
+int Next=1;
 
 Process Trabajo[id:1..N]
 {

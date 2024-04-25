@@ -6,7 +6,20 @@ int numero =N;
 int[M] arreglo;
 int total=0;
 
-Process Busco[id: 0..N-1]
+Process Busco[id:1..p]{       //Ojo con el índice. Es p, no M/p
+  int comienzo=(M/p)*(id-1);
+  int fin=(M/p)*(id);
+  while(comienzo<fin){
+    if(arreglo[comienzo]==N){
+      <Total=Total+1>;
+    }
+    comienzo++;
+  }
+}
+
+
+//------------------Versión Vieja------------------
+Process Busco[id: 0..M-1]
 {
 	if(arreglo[ID]==N) then
     {
