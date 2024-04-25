@@ -1,0 +1,25 @@
+1) Implementar el acceso a una base de datos de solo lectura que puede atender a lo sumo 5
+consultas simultáneas.
+
+Process proceso[id:0..N]{
+    //Trabajo
+    AccesoABD.Entro();
+    UsarBD();
+    AccesoABD.Salgo();
+    //Más trabajo
+}
+
+Monitor AccesoABD {
+    int cupos=5, esperando=0;
+    cond vc;
+    Procedure Entro ()
+    {
+        if(cupos>0){
+            cupos--;
+        }else{esperando++; wait (vc);}
+    }
+    Procedure Salgo(){
+        if(esperando>0){signal(vc);}
+        else{cupos++;}
+    }
+}

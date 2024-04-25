@@ -1,0 +1,64 @@
+Una empresa de turismo posee 4 combis con capacidad para 25 personas cada una y UN
+vendedor que vende los pasajes a los clientes de acuerdo al orden de llegada. Hay C clientes
+que al llegar intentan comprar un pasaje para una combi en particular (el cliente conoce este
+dato); si aún hay lugar en la combi seleccionada se le da el pasaje y se dirige hacia la combi;
+en caso contrario se retira. Cada combi espera a que suban los 25 pasajeros, luego realiza el
+viaje, y cuando llega al destino deja bajar a todos los pasajeros. Nota: maximizar la
+concurrencia; suponga que para cada combi al menos 25 clientes intentarán comprar pasaje.
+
+//Para la cola
+sem mutex=1;
+
+//Para venta
+sem fila=0;
+sem ventas[C]=([C] 0);
+int venta[C]=([C] 0);
+int cupos[4]=([4] 25);
+
+//Para subirse a la combi
+int combi;
+sem act[4]=([4] 1);
+int combis[C]=([C] 0);
+
+//Para el combi
+sem partida[4]=(0,0,0,0);
+sem bajada[4]=([4] 0);
+cola Compra;
+
+process Cliente[id:1..C]{
+    int nrodeseado,combi;
+    P(mutex);
+    venta[id]=(nrodeseado);
+    Push(Compra,id);
+    V(fila);
+    V(mutex);
+    P(ventas[id]);
+    if(venta[id]==0){return;}
+    combi=venta[id];
+    //Va hacia la combi
+    P(act[combi]);
+    combis[combi]++;
+    if(combis[combi]==25){V(partida[combi]);}
+    V(act[combi]);
+    P(bajada[id]);
+}
+
+process Vendedor{
+    int cont,cli;
+    while(cont<C){
+        P(fila);
+        P(mutex);
+        Pop(Compra,cli);
+        V(mutex);
+        if(cupos[venta[cli]]==0){venta[cli]=0;} //Acá es necesario el semáforo? Sé que este cliente no está utilizándola
+        else{/*realiza venta*/}
+        V(ventas[id]);
+        cont++;
+    }
+}
+
+process Combi[id:1..4]{
+    P(partida[id]);
+    //Viaja
+    for(i:1 to C){V(bajada[id]);}
+}

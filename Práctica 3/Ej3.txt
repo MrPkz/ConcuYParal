@@ -1,0 +1,109 @@
+3) En un corralón de materiales hay un empleado que debe atender a N clientes de acuerdo al
+orden de llegada. Cuando un cliente es llamado por el empleado para ser atendido, le da una
+lista con los productos que comprará, y espera a que el empleado le entregue el
+comprobante de la compra realizada.
+
+Process Cliente[id:0..N-1]{
+    Fila.Llego();
+    Compra.Compro(id,ldp,com);
+
+}
+
+Process Empleado{
+    while(true){
+        Fila.Siguiente();
+        //Por ahora, nada        
+        Compra.Andate();
+    }
+}
+
+Monitor Fila{
+    cond cli;
+    cond ven;
+    int cont=0;
+    
+    Process Llego{
+        cont++;
+        signal(ven);
+        wait(cli);
+    }
+
+    Process Siguiente{
+        if(cont==0){wait(ven);}
+        cont--;
+        signal(cli);
+    }
+}
+
+Monitor Compra{
+    bool estalista=false;
+    lista products;
+    cond laburaesclavo;
+    cond mequieroir;
+    int idactual;
+    comprobante moneymoney[N]=([N] 0);
+
+    Process Compro(id:in int,ldp:in lista,com: out comprobante){
+        idactual=id;
+        estalista=true;
+        products=ldp;
+        signal(laburaesclavo);
+        wait(mequieroir);
+        com=moneymoney[id];
+    }
+
+    Process Andate(){
+        if(!estalista){wait(laburaesclavo);}
+        //Armo comprobante
+        moneymoney[idactual]=comprobantegeneradorecien;
+        signal(mequieroir);
+    }
+}
+
+
+
+
+//VERSION BLOQUEANTE, VIEJA, FEA, ASQUEROSA, HORRIBLE
+
+
+
+
+Monitor Compra{
+    cond llegada;
+    colaOrdenada filita;
+    cond ringring;
+    int cant=0;
+
+    cond dalequeteneslaburo;        //puedo reutilizar ringring?
+    listadecompras lis;
+    cond mequieroir;
+    comprobantedepago Cheque[N];
+
+    Process Llego(id:in int){
+        Push(filita,id);
+        cant++;
+        signal(ringring);
+        wait(llegada);
+    }
+
+    Process Siguiente(id:out int,list:out listadecompras){
+        if(cant==0)wait(ringring);
+        Pop(order,id);
+        signal(llegada);
+        wait(dalequeteneslaburo);
+        list=lis;
+    }
+
+    Process Compro(i:in intl:in listadecompras, c:out comprobantedepago){
+        lis=l;
+        signal(dalequeteneslaburo);
+        wait(mequieroir);
+        c=cheque[i];
+    }
+
+    Process Andate(i:in int, c:out comprobantedepago){
+        cheque[i]=c;
+        cant--;
+        signal(mequieroir);
+    }
+}

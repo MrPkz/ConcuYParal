@@ -1,0 +1,190 @@
+2) Existen N personas que deben fotocopiar un documento cada una. Resolver cada ítem
+usando monitores:
+
+a)Implemente una solución suponiendo que existe una única fotocopiadora compartida
+por todas las personas, y las mismas la deben usar de a una persona a la vez, sin
+importar el orden. Existe una función Fotocopiar() que simula el uso de la fotocopiadora.
+Sólo se deben usar los procesos que representan a las Personas (y los monitores que sean
+necesarios).
+
+Process proceso[id:0..N]{
+    UsoFotocop.uso();
+}
+
+Monitor UsoFotocop {
+    Procedure Uso()
+    {
+        Fotocopiar();
+    }
+}
+
+b)Modifique la solución de (a) para el caso en que se deba respetar el orden de llegada.
+
+Process proceso[id:0..N]{
+    UsoFotocop.Entro();
+    Fotocopiar();
+    UsoFotocop.Salgo();
+}
+
+Monitor UsoFotocop {
+    cond cola;
+    int cont=0;
+    Procedure Entro(){
+        cont++;
+        if(cont>1){
+            wait(cola);
+        }
+    }
+    Procedure Salgo(){
+        if(cont>1){
+            signal(cola);
+        }
+        cont--;
+    }
+}
+
+c)Modifique la solución de (b) para el caso en que se deba dar prioridad de acuerdo a la
+edad de cada persona (cuando la fotocopiadora está libre la debe usar la persona de
+mayor edad entre las que estén esperando para usarla).
+
+Process proceso[id:0..N]{
+    UsoFotocop.Entro(id,edad);
+    Fotocopiar();
+    UsoFotocop.Salgo();
+}
+
+Monitor UsoFotocop {
+    cond cola[N];
+    colaOrdenada orden;
+    int cont=0;
+    int saux;
+    Procedure Entro(id,edad: in int){
+        cont++;
+        if(cont>1){
+            Push(orden,id,edad);
+            wait(cola[id]);
+        }
+    }
+    Procedure Salgo(){
+        if(cont>1){
+            Pop(orden,saux);
+            signal(cola[saux]);
+        }
+        cont--;
+    }
+}
+
+d) Modifique la solución de (a) para el caso en que se deba respetar estrictamente el orden
+dado por el identificador del proceso (la persona X no puede usar la fotocopiadora
+hasta que no haya terminado de usarla la persona X-1).
+
+Process proceso[id:0..N]{
+    UsoFotocop.Entro(id);
+    Fotocopiar();
+    UsoFotocop.Salgo(id);
+}
+
+Monitor UsoFotoco {
+    cond cola[N];
+    colaOrdenada orden;
+    int cont=0;
+    Procedure Entro(id: in int){
+        if(cont!=id){
+            wait(cola[id]);
+        }
+    }
+    Procedure Salgo(id: out int){
+        signal(cola[id]);
+        cont++;
+    }
+}
+
+e) Modifique la solución de (b) para el caso en que además haya un Empleado que le indica
+a cada persona cuando debe usar la fotocopiadora.
+
+Process proceso[id:0..N]{
+    UsoFotocop.Entro();
+    Fotocopiar();
+    UsoFotocop.Salgo();
+}
+
+Process empleado{
+    while(true){
+        UsoFotocop.proximo();
+    }
+}
+
+Monitor UsoFotocop {
+    cond cola;
+    cond fin;
+    int cont=0;
+    Procedure Entro(){
+        cont++;
+        wait(cola);
+    }
+
+    Procedure Proximo(){ //esta bien asi? No deberia tener prioridad?
+        if(cont>0){
+            signal(cola);
+            wait(fin);
+        }
+    }
+
+    Procedure Salgo(){
+        signal(fin);
+        cont--;
+    }
+}
+
+f) Modificar la solución (e) para el caso en que sean 10 fotocopiadoras. El empleado le
+indica a la persona cuando puede usar una fotocopiadora, y cual debe usar. 
+
+Process proceso[id:0..N]{
+    int f;
+    UsoFotocop.Entro(f);
+    Fotocopiar(f);
+    UsoFotocop.Salgo(f);
+}
+
+Process empleado{
+    while(true){
+        UsoFotocop.proximo();
+    }
+}
+
+Monitor UsoFotocop{
+    cond col;                   //Para poder encolar los que llegan
+    colaOrdenada orden;         //Para saber los IDs de quién sigue
+
+    int cont=0;                 //Cuenta fotocopiadoras en uso
+    bool libre[10]=([10] true); //Estado de cada fotocopiadora
+    int foto[N]=([N] 0);        //foto para cada proceso
+    
+    int actual=0;               //Para poder ver fotocopiadoras libres
+    int idaux;                  //Para ver a qué usuario le asigna el empleado
+    cond fin;                   //Para poner en espera al empleado
+
+    Procedure Pido(id:in int, fo: out int){
+        Push(orden,id);
+        wait(col);
+        fo=foto[id];
+    }
+
+    Procedure Proximo(){ //esta bien asi? No deberia tener prioridad?
+        if((cont>=0)&&(cont<10)){
+            cont++;
+            while(!libre[actual]){actual=(actual+1)%10;}
+            libre[actual]=false;
+            Pop(orden,id);
+            foto[idaux]=actual;
+            signal(col);
+            if(cont==10){wait(fin);}  //Espera a que se libere alguna
+        }
+    }
+
+    Procedure Salgo(fo: in int){
+        cont--;
+        libre[fo]=true;
+        signal(fin);   //Libera, es útil solo si cont era 10 pero anyways
+    }
+}

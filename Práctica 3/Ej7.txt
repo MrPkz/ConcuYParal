@@ -1,0 +1,83 @@
+7) Se debe simular una maratón con C corredores donde en la llegada hay UNA máquinas
+expendedoras de agua con capacidad para 20 botellas. Además existe un repositor
+encargado de reponer las botellas de la máquina. Cuando los C corredores han llegado al
+inicio comienza la carrera. Cuando un corredor termina la carrera se dirigen a la máquina
+expendedora, espera su turno (respetando el orden de llegada), saca una botella y se retira. Si
+encuentra la máquina sin botellas, le avisa al repositor para que cargue nuevamente la
+máquina con 20 botellas; espera a que se haga la recarga; saca una botella y se retira. Nota:
+maximizar la concurrencia; mientras se reponen las botellas se debe permitir que otros
+corredores se encolen. 
+
+Process Corredor{[id:1..C]{
+    Llegada.Arrival();
+    //Corre cual corredore hermose
+    Deshidratade.yo();
+    Maquina.usar();
+    Deshidratade.sig();
+}
+
+Process Repositor{
+    bool sigo=true;
+    while(sigo){
+        Maquina.reponer(sigo);
+    }
+}
+
+Monitor Llegada{
+    int cont=0;
+    cond cola;
+
+    Process Arrival(){
+        cont++;
+        if(cont==C){
+            signal_all(cola);
+        }
+        else{
+            wait(cola);
+        }
+    }
+}
+
+Monitor Deshidratade(){
+    cond cola;
+    int cont=0;
+
+    Process yo(){
+        cont++;
+        if(cont>1){wait(cola);}
+    }
+
+    Process sig(){
+        cont--;
+        signal(cola);
+    }
+}
+
+Monitor Maquina{
+    int botellas=20;
+    cond hacetulaburo;
+    cond sacatuawita;
+    int restantes=C;
+
+    Process usar{
+        if(botellas==0){wait(sacatuawita);}
+        else if(botellas==1){signal(hacetulaburo);}
+        botellas--;
+    }
+
+    Process reponer(s:out bool){
+        if(botellas>0){wait(hacetulaburo);}
+        //repone
+        if(restantes>20){
+            botellas=20; 
+            restantes-=20;
+            s=true;
+        }
+        else{
+            botellas=restantes;
+            restantes=0;
+            s=false;
+        }
+        signal(sacatuawita);
+    }
+}
