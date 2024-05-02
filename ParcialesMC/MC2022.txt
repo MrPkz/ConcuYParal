@@ -1,0 +1,139 @@
+1) Resolver con SEMÁFOROS el siguiente problema. En una planta verificadora de vehículos, existen 7 estaciones donde 
+se dirigen 150 vehículos para ser verificados. Cuando un vehículo llega a la planta, el coordinador de la planta le 
+indica a qué estación debe dirigirse. El coordinador selecciona la estación que tenga menos vehículos asignados en ese 
+momento. Una vez que el vehículo sabe qué estación le fue asignada, se dirige a la misma y espera a que lo llamen 
+para verificar. Luego de la revisión, la estación le entrega un comprobante que indica si pasó la revisión o no. Más allá 
+del resultado, el vehículo se retira de la planta. Nota: maximizar la concurrencia.  
+
+/*
+Un proceso por estaciones
+Un proceso coordinador
+Un proceso por vehículo
+Selecciona la estación con menos vehículos: tener una cola para el coordinador ordenada que guarde ahí cuál tiene menos. Ojo, esto no es tan así
+Lo hago con un minimo al vector
+Los vehículos llegan y se atienden por orden de llegada (asumo). OTRA cola
+Hay un semáforo Mutex para meterse a la cola. Esa cola la revisa el coordi así que no hace falta otro semáforo ahí, o sí? Capaz hago uno
+Después hay una cola para la llegada a cada estacion, un semaforo mutex para cada uno, y un semaforo que indica que está listo
+ASUMO QUE COORDI Y ESTACION EJECUTAN INFINITAMENTE
+*/
+
+sem llegada=1;      //Para manejar la cola
+sem labure=0;       //Para avisarle al coordinador
+Queue C;            //Para encolarse
+int asignados[7]=([7] 0);       //Para saber cuantos hay en cada estacion
+int estas[150];                 //Para que cada vehiculo sepa a donde ir
+sem llegando[7]=([7] 1);        //Para poder encolarse en la llegada
+sem aviso[7]=([7] 0);           //Para avisarle al proceso que están
+sem listo[150]=([150] 0);       //Para decirle a cada proceso que se puede ir
+
+//Cosas que me olvide
+sem vaya[150]=([150] 0);        //Para indicarle a cada proceso que puede ir a la estacion
+Queue Cola[7];                  //Para cada estacion
+string recibo[150];             //Recibo resultados
+sem mutexasignados[7]=([7] 0);  //Para no editar asignados a la vez. Esto está mal, es uno solo
+   
+Process Vehiculo[id:1..150]{
+    int mie;
+    string res;
+
+    //llega
+    P(llegada);
+    Push(C,id);
+    V(labure);
+    V(llegada);
+    P(vaya[id]);
+    mie=estas[id];
+    //Se dirige
+    P(llegando[mie]);
+    Push(Cola[mie],id);
+    V(llegando[mie]);
+    V(aviso[mie]);
+    P(listo[id]);
+    res=recibo[id];             //Deberia restar el asignado aca o en la estacion? CONSULTAR
+}
+
+Process Coordi{
+    int aux,m;
+
+    while(true){
+        P(labure);
+        P(llegada);
+        Pop(C,aux);
+        V(llegada);
+        P(mutexasignados[m]);
+        m=min(asignados);       //ESTO VA SI O SI ACA ADENTRO
+        asignados[m]++;
+        V(mutexasignados[m]);
+        estas[aux]=m;
+        V(vaya[aux]);
+    }
+}
+
+Process Estacion[id:1..7]{
+    int idaux;
+    string resu;
+
+    while(true){
+        P(aviso[id]);
+        P(llegando[id]);
+        Pop(Cola[id],idaux);
+        V(llegando[id]);
+        resu=hacerevision();
+        recibo[idaux]=resu;
+        P(mutexasignados[id]);
+        asignados[id]--;        //En la resolucion lo hace el vehiculo
+        V(mutexasignados[id]);
+        V(listo[idaux]);
+    }
+}
+
+//CONSULTAR por qué no hace 7 semaforos para el contador de estaciones
+
+2)  Resolver con MONITORES el siguiente problema. En un sistema operativo se ejecutan 20 procesos que 
+periódicamente realizan cierto cómputo mediante la función Procesar(). Los resultados de dicha función son 
+persistidos en un archivo, para lo que se requiere de acceso al subsistema de E/S. Sólo un proceso a la vez puede hacer 
+uso del subsistema de E/S, y el acceso al mismo se define por la prioridad del proceso (menor valor indica mayor 
+prioridad).  
+
+/*
+Ejecución periódica: un while true
+El monitor es para el acceso al susbistema. O sea que va a ser generar, acceso, uso, salida
+Una priority queue en el monitor
+*/
+
+Process Proceso[id:1..20]{
+    int pr;     //Prioridad, la conozco. Podria haber hecho una funcion
+    resultado r;
+    while(true){
+        r=Procesar();
+        Subsistema.acceso(id,pr);
+        UsoDeES(r);
+        Subsistema.salida();
+    }
+}
+
+Monitor Subsistema{
+    PriorityQueue(int,int) Q;        //Cuando hago el pop me devuelve solo el ID correspondiente, asumo eso
+    int proximo;
+
+    bool libre=true;             //Siempre hace falta el bool
+    cond espero[20];        //ME OLVIDE DE ESTO SOY UN BANANA
+
+    Process llego(i:in int,p:in int){
+        if(libre){              //CONSULTAR si cuando un proceso de mayor prioridad entra saca al otro. creo que no
+            libre=false;
+        }else{
+            Push(Q,i,p);
+            wait(espero[i]);
+        }
+    }
+
+    Process salida(){
+        if(empty(Q)){           //Puedo hacer esto no? CONSULTAR
+            libre=true;
+        }else{
+            proximo=Pop(Q);
+            signal(espero[proximo]);
+        }
+    }
+}

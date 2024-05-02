@@ -1,0 +1,125 @@
+1) SEMAFOROS: Un sistema debe validar un conjunto de 10000 transacciones que se encuentran disponibles en una estructura de
+datos. Para ello, el sistema dispone de 7 workers, los cuales trabajan colaborativamente validando de a 1
+transacción por vez cada uno. Cada validación puede tomar un tiempo diferente y para realizarla los workers
+disponen de la función Validar(t), la cual retorna como resultado un número entero entre 0 al 9. Al finalizar el
+procesamiento, el último worker en terminar debe informar la cantidad de transacciones por cada resultado de la
+función de validación. Nota: maximizar la concurrencia.
+
+/*
+Un semaforo de 7, que proteja a una variable contadora. Va a haber 7 vectores, uno para cada uno, con 10 espacios, y uno de respuesta
+Al ser una estructura de datos eso me habla de usar UNA COLAAAAA
+Tiene que informar el ultimo, lo hago con un print eso!!
+*/
+
+sem mutex=1;
+sem actualizo=1;
+sem espera=0;
+
+colaOrdenada T; //Aca estan todas mis transferencias
+
+int trans=0;
+int w=0;
+int rta[10]=([10] 0);
+
+Process Worker[id:1..7]{
+    int resultados[10]=([10] 0);        //CONSULTAR si puedo hacerlo así o necesito hacerlo con uno solo
+    int aux;
+
+    P(mutex);
+    while(trans<10000){             //Podria haberlo con un !empty en la cola. CONSULTAR
+        trans++;               
+        aux=Pop(T);
+        V(mutex);
+        resultados[Validar(aux)]++;
+        P(mutex);
+    }
+    V(mutex);
+
+    P(actualizo);
+    for(int i=0:9){
+        rta[i]+=resultado[i];
+    }
+    w++;        //ESTO VA SI O SI DENTRO DEL SEMAFORO. Puede un solo sem cubrir mas de una cosa a la vez? CONSULTAR
+    if(w<7){
+        V(actualizo);
+        P(espera);
+    }else{
+        for(int k=0..9){
+            printf(k,rta[k]);
+        }
+        for(int j=1..6){
+            V(espera);
+        }
+        V(actualizo);       //Podria ir antes?? CONSULTAR
+    }
+}
+
+
+--Solucion Vieja e incorrecta--
+sem mutex=1; sem informe=1;
+int transaccion=1;
+int valores[7][10]=([7][10] 0);     //Esta bien asi la sintaxis? CONSULTAR
+int rta[10]=([10] 0);
+
+Process Worker[id:1..7]{
+    int aux;
+
+    P(mutex);
+    while(transaccion<=10000){
+        aux=transaccion;
+        transaccion++;
+        V(mutex);
+        valores[id][Validar(aux)+1]++;
+        P(mutex);
+    }
+    V(mutex);
+    P(informe);
+    for(int i:1..10){
+        rta[i]+=valores[id][i];
+    }
+    V(informe);
+}
+
+2)  MONITORES: En una empresa trabajan 20 vendedores ambulantes que forman 5 equipos de 4 personas cada uno (cada vendedor
+conoce previamente a que equipo pertenece). Cada equipo se encarga de vender un producto diferente. Las
+personas de un equipo se deben juntar antes de comenzar a trabajar. Luego cada integrante del equipo trabaja
+independientemente del resto vendiendo ejemplares del producto correspondiente. Al terminar cada integrante del
+grupo debe conocer la cantidad de ejemplares vendidos por el grupo. Nota: maximizar la concurrencia.
+
+Process Vendedor[id:1..20]{
+    int equipo;     //Ya lo dispongo
+    int x,final;
+
+
+    Team[equipo].llego();
+    //Vendo una cantidad x. x=vendoproductos();
+    Team[equipo].informe(x,final);
+}
+
+Monitor Team[id:1..5]{
+    cond espera;
+    int cantF=0;
+    int llegaron=0;
+
+    Process llego(){
+        llegaron++;
+        if(llegaron==4){
+            llegaron=0;
+            signal_all(espera);
+        }else{
+            wait(espera);
+        }
+    }
+
+    Process informe(x: in int, f: out int){
+        llegaron++;
+        cantF+=x;
+        if(llegaron==4){
+            llegaron=0;
+            signal_all(espera);
+        }else{
+            wait(espera);
+        }
+        f=cantF;
+    }
+}

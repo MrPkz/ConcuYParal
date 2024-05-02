@@ -1,0 +1,104 @@
+1) Resolver con SEMÁFOROS el siguiente problema. Se debe simular el uso de una máquina expendedora de gaseosas
+con capacidad para 100 latas por parte de U usuarios. Además existe un repositor encargado de reponer las latas de
+la máquina. Los usuarios usan la máquina según el orden de llegada. Cuando les toca usarla, sacan una lata y luego
+se retiran. En el caso de que la máquina se quede sin latas, entonces le debe avisar al repositor para que cargue
+nuevamente la máquina en forma completa. Luego de la recarga, saca una lata y se retira. Nota: maximizar la
+concurrencia; mientras se reponen las latas se debe permitir que otros usuarios puedan agregarse a la fila.
+
+/*
+Voy a asumir que existe la funcion SacarLata() pero voy a usar un contador para chequear que haya latas.
+Tengo U usuarios y una sola máquina: baton!!!
+Hay un proceso repositor así que también tengo un semáforo para él
+Como al reponer tengo que dejar encolar entonces eso va a ir afuera del semaforo de exclusion. Voy a tener uno de sincronizacion para el proceso
+Entonces, tengo semaforo para mutex, cola para procesos, semaforo para la recarga (Uno o dos? CONSULTAR) y contador de latas. TE FALTO EL BOOLEANO
+Y FALTO EL SEMAFORO PARA PAUSAR CADA PROCESO
+*/
+
+sem mutex=1;
+sem recarga=0; sem listo=0;
+sem espera[U]=([U] 0); //ME OLVIDE DE ESTOOOOOOOOOOOOOOOOO
+int latas=100;
+colaOrdenada C; //Ordena a los procesos por orden de llegada con su ID
+bool libre=true; //TE OLVIDASTE DE ESTOO
+
+Process Persona[id:1..U]{
+    int aux;
+
+    //llegada
+    P(mutex);
+    if(libre){
+        libre=false;
+        V(mutex);
+    }else{
+        Push(C,id);
+        V(mutex);
+        P(espera[id]);
+    }
+    if(latas==0){
+        V(recarga);
+        P(listo);
+    }
+    latas--;
+    SacarLata();
+    P(mutex);
+    if(!empty(C)){
+        Pop(C,aux);
+        V(espera[aux]);
+    }else{
+        libre=true;
+    }
+    V(mutex);
+}
+
+Process Repositor{
+    int cont=100;           //Cuantas latas hubo en la maquina. Cuando llegue a U, corta
+    while(cont<U){
+        P(recarga);
+        latas=100;          //TE OLVIDASTE DE ESTO. FUNDAMENTALL
+        cont+=100;
+        V(listo);
+    }
+}
+
+2) Resolver el siguiente problema con MONITORES. En una montaña hay 30 escaladores que en una parte de la subida
+deben utilizar un único paso de a uno a la vez y de acuerdo al orden de llegada al mismo. Nota: sólo se pueden
+utilizar procesos que representen a los escaladores; cada escalador usa sólo una vez el paso.
+
+/*
+A ver, acá yo tendría un monitor que es el paso, y los procesos. 
+El monitor tiene 2 procesos, llego y termino. Adentro del monitor tengo una cola, un arreglo de cond para cada proceso y un booleano para ver si tengo gente en la cola
+*/
+
+
+Process Escalador[id:1..30]{
+    Paso.llego(id);
+    //Atravieso
+    Paso.termino();
+}
+
+Monitor Paso{
+    //colaOrdenada C;     NO CORRESPONDE LA COLA PORQUE EL COND YA LOS ASIGNA POR LLEGADA
+    int uso=0;          //bool uso=false;
+    cond sigo;          //cond sigo[30];
+    //int aux;
+
+    Process llego(i:in int){
+        uso++;
+        if(uso==1){
+            uso=true;
+        }else{
+            //Push(C,i);
+            wait(sigo);
+        }
+    }
+
+    Process termino(){
+        uso--;
+        if(uso==0){
+            libre=true;
+        }else{
+            //Pop(C,aux);
+            signal(sigo);
+        }
+    }
+}

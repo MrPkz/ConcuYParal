@@ -1,0 +1,160 @@
+1. Resolver con SEMÁFOROS los problemas siguientes: 
+a) En una estación de trenes, asisten P personas que deben realizar una carga de su tarjeta SUBE en la terminal 
+disponible. La terminal es utilizada en forma exclusiva por cada persona de acuerdo con el orden de llegada. 
+Implemente una solución utilizando sólo emplee procesos Persona. Nota: la función UsarTerminal() le permite cargar 
+la SUBE en la terminal disponible.  
+
+/*
+Ideas:
+Por tener orden de llegada, tengo que tener una cola. Voy a usar passing the baton
+necesito: un semaforo para la cola y la variable de libre. Una cola ordenada C
+*/
+
+sem paso = 1;
+sem sig[P]=([P] 0);                     //ME OLVIDE DE ESTOOOOOOOO. Asumo que los indices arrancan en 1
+bool libre = true;
+colaOrdenada C;
+
+Process Persona[id:1..P]{
+    //Llego a la terminal
+    P(paso);
+    if(libre){
+        libre=false;
+        V(paso);
+    }else{
+        Push(C,id);
+        V(paso);
+        P(sig[id]);
+    }
+    UsarTerminal();
+    P(paso);
+    if(!empty(C)){
+        int aux=Pop(C);
+        V(sig[aux]);
+    }else{
+        libre=true;
+    }
+    V(paso);
+}
+
+b) Resuelva el mismo problema anterior pero ahora considerando que hay T terminales disponibles. Las personas 
+realizan una única fila y la carga la realizan en la primera terminal que se libera. Recuerde que sólo debe emplear 
+procesos Persona. Nota: la función UsarTerminal(t) le permite cargar la SUBE en la terminal t. 
+
+/*
+Pensamiento inicial:
+Ahora tengo t terminales, por lo que dice el enunciado me conviene una COLA antes que un ARRAY
+Entonces, al semaforo de control, a los del baton, a la cola inicial se le suma la cola de las terminales. 
+El libre ya no seria necesario, chequeo que la cola de las terminales no este vacia.... ERROR, si me hace falta porque sino 
+se me puede meter un proceso que este por encolarse. En realidad tengo 2 opciones: siempre mandar la terminal a la cola y no hacer
+el baton, lo cual implica siempre sacar el t de la cola cuando voy a usarla,
+ o asignarsela directo al proceso que sigue pero para eso ya necesitaria  un arreglo para la terminal que usa cada uno.
+ Voy por la segunda opcion porque me parece más coherente con la técnica que estoy usandou. Y no me hace falta el libre.
+ La solucion propuesta lo hace del otro modo, usa el libre y encola las terminales siempre. Eso lo hace afuera del semaforo tho
+
+
+ ESTA MAL QUE A MI COLA DE TERMINALES LA PROTEJA EL MISMO SEMAFORO DEL CONTROL? CONSULTAR
+*/
+
+sem paso = 1;
+sem sig[P]=([P] 0);                 //Asumo arranca en 1
+colaOrdenada C;
+colaOrdenada Terminales;            //Asumo terminales cargadas en la cola
+int TerXCli[P]=([P] 0);             //Asumo terminales numeradas de 1 a T
+
+Process Persona[id:1..P]{
+    //Llego
+    P(paso);
+    if(!empty(Terminales)){
+        TerXCli[id]=Pop(T);
+        V(paso);
+    }else{
+        Push(C,id);
+        V(paso);
+        P(sig[id]);
+    }
+    UsarTerminal(TerXCli[id]);
+    P(paso);
+    if(!empty(C)){
+        int aux=Pop(C);
+        TerXCli[aux]=TerXCli[id];
+        V(sig[aux]);
+    }else{
+        Push(Terminales,TerXCli[id]);
+    }
+    V(paso);
+}
+
+
+2. Resolver con MONITORES el siguiente problema: En una elección estudiantil, se utiliza una máquina para voto 
+electrónico. Existen N Personas que votan y una Autoridad de Mesa que les da acceso a la máquina de acuerdo con el 
+orden de llegada, aunque ancianos y embarazadas tienen prioridad sobre el resto. La máquina de voto sólo puede ser 
+usada por una persona a la vez. Nota: la función Votar() permite usar la máquina.
+
+/*
+Bueno, el brainstorming:
+Como ancianos y embarazadas tienen prioridad, cuando llegue voy a tener que ponerlos en una cola prioritaria
+Voy a pasar un bool por parametro y dentro del monitor tendre 2 colas.
+Monitor necesito uno solo porque es para el acceso. La funcion Votar va adentro del proceso, no hay drama con eso.
+La llegada manda id y priority para meter a la cola. Ahora, cuando salgo tengo que avisarle a la autoridad, me hace falta un segundo llamado que haga un signal
+*/
+
+Process Persona[id:1..N]{
+    bool priority;          //YA ESTA SETEADO EN TRUE O FALSE SEGUN CORRESPONDA
+    Acceso.llego(id,priority);
+    Votar();
+    Acceso.mevoy();
+}
+
+Process Autoridad{
+    bool fin=false;
+    while(!fin){
+        Acceso.mandopaso(fin);
+    }
+}
+
+Monitor Acceso{
+    colaOrdenada COMUN;         //Podría haber hecho una sola lol
+    colaOrdenada PRIORIDAD;
+    bool maqenuso=false;        //Esta no hizo falta
+    cond espero[n];
+    cond pausa;
+    cond listo;             //ME HIZO FALTA AGREGAR ESTO
+    int next;               //DE ESTO TAMBIEN ME OLVIDE
+    int cont=0;             //ME OLVIDE DE ESTOOOOOOO
+
+    Process llego(i: in int, b:in bool){
+        if(b){
+            Push(PRIORIDAD,i);
+        }else{
+            Push(COMUN,i);
+        }
+        signal(pausa);      //Esto es por si no habia nadie, para avisar que llegue y despierte a la autoridad
+        cond(espera[i]);
+    }
+
+    Process mevoy(){
+        maqenuso=false;    //Ojo con olvidarte de esto. No hace falta
+        signal(listo);
+    }
+
+    Process mandopaso(b: out bool){
+        if((empty(COMUN))&&(empty(PRIORIDAD))){wait(pausa);}    //Esto es para poder cortar
+        //if(maqenuso){wait(listo);}     Esto es para saber que se está usando la máquina. No va, la chequeo al final
+        if(!empty(PRIORIDAD)){
+            Pop(PRIORIDAD,next);
+        }else{
+            Pop(COMUN,next);
+        }
+        //Ya sé que hay alguien sí o sí por ende no chequeo caso vacias ambas
+        cont++;
+        maqenuso=true;          //No hace falta
+        if(cont==N){
+            b=true;
+        }else{
+            b=false;
+        }
+        signal(espero[next]);
+        wait(listo);
+    }
+}

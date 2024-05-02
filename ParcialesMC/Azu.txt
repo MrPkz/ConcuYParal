@@ -1,0 +1,113 @@
+1) Resolver con AWAIT. Para un partido de fútbol se venden E entradas de forma online, y hay P personas (P>E) que intentan comprar una entrada
+formando una única fila. Para la venta existen 5 boleterías virtuales que van atendiendo los pedidos de las personas de acuerdo con el orden de
+llegada. Cuando una boletería atiende a una persona, si aún quedan entradas disponibles le envía el número de entrada vendida, sino le indica que
+no hay más entradas. Nota: maximizar la concurrencia.
+
+int entrada[P]=([P] 0);     //Si no hay entrada le manda -1. No hay entrada con nro 0
+Queue(int) Q;
+int entradas=E;
+
+Process Persona[id:1..P]{
+    //llegada
+    <Push(Q,id)>;
+    <Await(entrada[id]!=0)>;
+    if(entrada[id]>0){
+        int mientrada=entrada[id];  //Todo esto ya va asi pues no se edita mas
+    }       //ME OLVIDE TODO ESTE DETALLE
+}
+
+Process Boletero[id:1..5]{
+    int aux,cod=-1;
+    while(true){
+        <Await (!empty(Q)) Pop(Q,aux)>;
+        <if(entradas>0) entradas--; cod=GenerarCodigo();>
+        entrada[aux]=cod;       //Se puede hacer asi? CONSULTAR
+    }
+}
+
+2) Semáforos. En un camino turístico hay un puente por donde puede pasar un vehículo a la vez. Hay N autos que deben pasar por él de acuerdo con
+el orden de llegada. Nota: solo se pueden usar los procesos que representan a los autos; suponga que existe la función  Pasar() 
+que simula el paso del auto por el puente.
+
+sem mutex=1;
+Queue Q;
+int cruces=0;
+
+sem espera[N]=([N] 0);          //TE OLVIDASTE DE ESTE
+
+Process Vehiculo[id:1..N]{      //LOS INDICES ESTAN BIEN ASI??
+    P(mutex);
+    cruces++;
+    if(cruces>1){
+        V(mutex);
+    }else{
+        Push(Q,id);
+        V(mutex);
+        P(espera[id]);
+    }
+    Pasar();
+    P(mutex);
+    cruces--;
+    if(cruces>0){
+        v(espera[Pop(Q)]);
+    }
+    V(mutex);
+}
+
+3) Monitores. Para un experimento se tiene una red con 15 controladores de temperatura y un módulo central. Los controladores cada cierto tiempo
+toman la temperatura mediante la función mediar() y se la envían a la central para que ésta le indique que debe hacer (número de 1 a 10), y Luego
+realiza esta acción mediante la función actuar(). La central atiende los pedidos de los controladores de acuerdo al orden de llegada, usando la 
+función determinar() para determinar la acción que deberá hacer ese controlador (número de 1 a 10). Nota: el tiempo que espera cada controlador 
+para tomar nuevamente la temperatura empieza a contar después de haber ejecutado la función actuar().
+
+//Está mal que no haya hecho 2 monitores?? CONSULTAR
+
+Process Controlador[id:1..15]{
+    int t,accion;
+
+    while(true){
+        t=mediar();
+        Acceso.llego(id,t,accion);
+        Actuar(accion);
+    }
+}
+
+Process Central(){
+    int temp,res;
+    while(true){
+        Acceso.proximo(temp);
+        res=determinar(temp);
+        Acceso.indico(res);
+    }
+}
+
+Monitor Acceso{
+    cond espera;
+    cond vacio;
+    int esperando=0;
+    Queue Q;
+    int temperatura[15]=([15] 0);
+    int accion[15]=([15] 0);
+    int pa;
+
+    Process llego(i:in int,t:in int,a:out int){
+        esperando++;
+        if(esperando==1){signal(vacio);}            //CONSULTAR
+        Push(Q,i,t);
+        temperatura[i]=t;
+        wait(espera);
+        a=accion[i];
+    }
+
+    Process proximo(t:out int){
+        if(esperando==0){wait(vacio);}
+        Pop(Q,pa,t);
+    }
+
+    Process indico(r:in int){
+        accion[pa]=r;
+        signal(espera);
+        esperando--;
+        //Debería esperar acá a que el otro termine?? CONSULTAR
+    }
+}
