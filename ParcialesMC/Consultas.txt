@@ -1,0 +1,42 @@
+Del Parcial de Azul:
+
+1. Puedo salir sin asignarme en la variable interna la entrada? O lo tengo que hacer si o si?           hay que hacerlo
+Cuando genero el código, lo puedo hacer dentro de una sentencia atómica? O lo tengo que tener afuera?       adentro
+Es valido usar el -1 como lo use?                                                       si
+2. Consultar por los indices, de arreglos y procesos.                                   BIEN DE AMBOS MODOS
+3. Necesito SI O SI ambos monitores o esta bien con uno solo?                           NO HACE FALTA
+Necesito chequear que termine de recibir la accion?                                     nop
+Que onda con el signal solo cuando esperando es 1? Chequear la lógica                   esta bien, no hace falta
+
+De la práctica 2, ejercicio 7, tema orden de llegada.
+Ahí hace falta una cola? Porque el cálculo es chico             NO
+
+MC2022:
+1. Cuando se resta la cantidad asignada, lo hace la estacion o el auto cuando se va?            indiferente
+Para maximizar la concurrencia puedo hacer un semaforo para cada posicion del arreglo?          no porque afecta al minimo
+2. Un proceso de mayor prioridad PUEDE SACAR un proceso??                           nop
+Para las Queue puedo hacer el empty sin drama no?                                   sip
+
+
+4/12/23:
+1. Para llevar registro de la suma vale hacerlo por separado en cada proceso y después sumarlo?     es lo mejor
+No sería eso más concurrente que sumar todos a la vez?
+Puede un semaforo cubrir más de un recurso?                                                         si
+Tema semaforo actualizo: lo puedo poner antes? Igual es indistinto
+
+10/12/23:
+1b. Est mal que a la cola de terminales la proteja el semaforo de control?                          no
+Deberia si o si sacarlo afuera del paso? Implicaria mas push y pop                                  es lo mejor para maximizar concurrencia
+
+18/12/23:
+1. Para la recarga necesito 2 semaforos si o si, no?                                    si; no hay que maximizar economia de semaforos
+
+2021 Await:
+Consultar el tema del if
+
+Recu 1 2022:
+Que onda esa solucion?                  No lo consulte pero meh, en teoria no cubre hasta SOLO p platos
+
+13/12/2022:
+Posicion del semaforo mutex                                     si es el ultimo no hay drama porque es lo mismo. Sino, cubre a las variables compartidas
+.                                                               anyways puede dejar afuera a los semaforos de despertada
