@@ -1,0 +1,61 @@
+3. Se debe modelar una casa de Comida Rápida, en el cual trabajan 2 cocineros y 3
+vendedores. Además, hay C clientes que dejan un pedido y quedan esperando a que se lo
+alcancen.
+Los pedidos que hacen los clientes son tomados por cualquiera de los vendedores y se lo
+pasan a los cocineros para que realicen el plato. Cuando no hay pedidos para atender, los
+vendedores aprovechan para reponer un pack de bebidas de la heladera (tardan entre 1 y 3
+minutos para hacer esto).
+Repetidamente cada cocinero toma un pedido pendiente dejado por los vendedores, lo
+cocina y se lo entrega directamente al cliente correspondiente.
+Nota: maximizar la concurrencia
+
+chan pedido(int);
+chan orden(int);
+chan atendido[0..C-1](bool);
+chan proxi(int);
+chan sig[0..2](int);
+
+Process Cliente[id:0..C-1]{
+    bool fin;
+
+    send pedido(id);
+    receive atendido[id](fin);
+}
+
+Process Cocinero[id:0..1]{
+    int or;
+
+    while(true){
+        receive orden(or);
+        //Hacer orden
+        send atendido[or](1);
+    }
+}
+
+Process Vendedor[id:0..2]{
+    int cli;
+
+    while(true){
+        send proxi(id);
+        receive sig[id](cli);
+        if(cli<>-1){
+            //Toma el pedido
+            send orden(cli);
+        }else{
+            delay(180);
+        }
+    }
+}
+
+Process Admin{
+    int idcli,v;
+
+    while(true){
+        receive proxi(v);
+        cli=-1;
+        if(!empty(pedido)){
+            receive pedido(cli);
+        }
+        send sig[v](cli);
+    }
+}

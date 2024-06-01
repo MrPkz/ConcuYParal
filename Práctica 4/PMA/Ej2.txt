@@ -1,0 +1,39 @@
+2. Se desea modelar el funcionamiento de un banco en el cual existen 5 cajas para realizar
+pagos. Existen P personas que desean pagar. Para esto cada una selecciona la caja donde
+hay menos personas esperando, una vez seleccionada espera a ser atendido.
+NOTA: maximizando la concurrencia.
+
+chan llegada(int);
+chan fila[0..4](int);
+chan atendido[0..P-1](int);
+
+Process Admin{
+    int filas[5]=([5] 0);
+    int cli,posi;
+
+    while(true){
+        receive llegada(cli);
+        posi=min(filas);
+        send atendido[cli](posi);
+    }
+}
+
+Process Persona[id:0..P-1]{
+    int fil;
+
+    //llegada
+    send llegada(id);
+    receive atendido[id](fil);
+    send fila[fil](id);
+    receive atendido[id](fil);
+}
+
+Process Caja[id:0..4]{
+    int cli;
+
+    while(true){
+        receive fila[id](cli);
+        //Atender a cliente
+        send atendido[cli](0);
+    }
+}
