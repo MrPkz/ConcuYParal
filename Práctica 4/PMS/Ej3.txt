@@ -1,0 +1,43 @@
+8. Resolver con PMS (Pasaje de Mensajes SINCRÓNICOS) el siguiente problema. En un
+examen final hay P alumnos y 3 profesores. Cuando todos los alumnos han llegado
+comienza el examen. Cada alumno resuelve su examen, lo entrega y espera a que alguno de
+los profesores lo corrija y le indique la nota. Los profesores corrigen los exámenes
+respectando el orden en que los alumnos van entregando. Nota: maximizar la concurrencia
+y no generar demora innecesaria.
+
+Process Alumno[id:0..P-1]{
+    texto exam; int x;
+    //llegada
+    Admin!llegada();
+    Admin?start();
+    exam=ResolverExamen();
+    Admin!entrega(exam,id);
+    Profesor[*]?nota(x);
+}
+
+Process Profesor[id:0..2]{
+    int a,n; texto e;
+
+    while(true){
+        Admin!corrijo(id);
+        Admin?tome(e,a);
+        n=Corregir(e);
+        Alumno[a]!nota(n);
+    }
+}
+
+Process Admin{
+    int cont=0; texto e; int x;
+    Queue(texto,int) Q;
+
+    while(cont<30){
+        Alumno[*]?llegada(); 
+        cont++;
+    }
+    for(int i:0..30){
+        Alumno[i]!start();
+    }
+    do Alumno[*]?entrega(e,x) -> Push(Q,e,x);
+     (not empty(Q)); Profesor[*]?corrijo(x) -> Profesor[x]!tome(Pop(Q));
+    od
+}

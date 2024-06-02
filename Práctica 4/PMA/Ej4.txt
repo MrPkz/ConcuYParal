@@ -30,7 +30,7 @@ Process Empleado{
 
     while(true){
         receive atendeme();
-        if (not empty(pago)) ->
+        if (not empty(pago)||(empty(cabs))) ->              //Consultar qué pasa acá con el 'atendeme'
             receive pago(cli,cabi);
             Push(cabs,cabi);
             cobrar(cli);
