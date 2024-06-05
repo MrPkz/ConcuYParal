@@ -1,0 +1,52 @@
+5. En un sistema para acreditar carreras universitarias, hay UN Servidor que atiende pedidos
+de U Usuarios de a uno a la vez y de acuerdo al orden en que se hacen los pedidos. Cada
+usuario trabaja en el documento a presentar, y luego lo envía al servidor; espera la respuesta
+del mismo que le indica si está todo bien o hay algún error. Mientras haya algún error vuelve
+a trabajar con el documento y a enviarlo al servidor. Cuando el servidor le responde que
+está todo bien el usuario se retira. Cuando un usuario envía un pedido espera a lo sumo 2
+minutos a que sea recibido por el servidor, pasado ese tiempo espera un minuto y vuelve a
+intentarlo (usando el mismo documento).
+
+Procedure Acreditacion IS
+    Task Server is
+        ENTRY envio(D:IN OUT texto; S:OUT bool; R:OUT bool);
+    End Server;
+
+    Task Type User;
+
+    au:ARRAY(1..U) OF User;
+
+    Task Body Server is
+    Begin
+        loop
+            Accept envio(D:IN OUT texto; S:OUT bool; R:OUT bool) do
+                D:=CorregirErrores(D);
+                if(*hayerrores*)then
+                    R:=true;
+                else 
+                    R:=false;
+                end if;
+                S:=false;
+            End envio;
+        end loop;
+    End Server;
+
+    Task Body User IS
+        doc:texto:='';
+        env,err:bool :=true;
+    Begin
+        while(err) loop
+            doc:=TrabajarEnTexto(doc);
+            env:=true;
+            while(env)loop                  //CONSULTAR SINTAXIS DEL WHILE
+                select 
+                    Server.envio(doc,env,err);
+                or delay 120
+                    delay 60;
+                end select;
+            end loop;
+        end loop;
+    End User;
+Begin
+    null;
+End Acreditacion;

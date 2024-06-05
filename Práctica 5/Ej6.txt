@@ -1,0 +1,81 @@
+6. En una playa hay 5 equipos de 4 personas cada uno (en total son 20 personas donde cada
+una conoce previamente a que equipo pertenece). Cuando las personas van llegando
+esperan con los de su equipo hasta que el mismo esté completo (hayan llegado los 4
+integrantes), a partir de ese momento el equipo comienza a jugar. El juego consiste en que
+cada integrante del grupo junta 15 monedas de a una en una playa (las monedas pueden ser
+de 1, 2 o 5 pesos) y se suman los montos de las 60 monedas conseguidas en el grupo. Al
+finalizar cada persona debe conocer grupo que más dinero junto. Nota: maximizar la
+concurrencia. Suponga que para simular la búsqueda de una moneda por parte de una
+persona existe una función Moneda() que retorna el valor de la moneda encontrada.
+
+2 tasks principales: personas y equipo.
+Va a haber un Task Admin que asigne nros cuando llegan las tareas. NO, ESTO NO
+Cuando uno ya sabe el equipo, va y le avisa que llega. Acá tienen que ser 2 procesos porque sino se traba!!
+Así que el task equipo va a tener un llego, y el task persona va a tener un comienzo
+Del mismo modo, el equipo tiene un parcial y la persona un final
+
+Procedure Playa is
+
+    Task Type Equipo is
+        ENTRY llegada(I:IN int);
+        ENTRY parcial(P:IN int);
+    End Equipo;
+
+    Task Type Persona is
+        ENTRY mid(I:IN int);
+        ENTRY inicio;
+        ENTRY total(P:OUT int);
+    End Equipo;
+
+    ae:ARRAY(1..5) OF Equipo;
+    ap:ARRAY(1..20) OF Persona;
+
+    Task Body Equipo is
+        cant,final:integer;
+        m:ARRAY(1..4) OF integer;
+    Begin
+        cant:=0;
+        for i in 1..4 loop
+            Accept llegada(I:IN int) do
+                cant++;
+                m(i):=I;
+            End llegada;
+        end loop;
+        for i in 1..4 loop
+            Persona(m(i)).inicio;
+        end loop;
+        final:=0;
+        cant:=0;
+        for i in 1..4 loop
+            Accept parcial(P:IN int) do
+                cant++;
+                final:=final+P;
+            End parcial;
+        for i in 1..4 loop
+            Persona(m(i)).total(final);
+        end loop;
+    End Persona;
+
+    Task Body Persona is
+        id,e,parcial,final:integer;
+    Begin
+        Accept mid(I:IN int) do
+            id:=I;
+        End mid;
+        e:=ObtenerTeam();
+        Equipo(e).llegada(id);
+        Accept inicio;
+        parcial:=0;
+        for i in 1..15 loop
+            parcial:=ObtenerMoneda();
+        end loop;
+        Equipo.parcial(parcial);
+        Accept total(P:OUT int) do
+            final:=P;
+        End total;
+    End Persona;
+begin
+    for i in 1..20 loop
+        ap(i).mid(i);
+    end loop;
+End Playa;
