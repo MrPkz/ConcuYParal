@@ -1,0 +1,114 @@
+4. En una clínica existe un médico de guardia que recibe continuamente peticiones de
+atención de las E enfermeras que trabajan en su piso y de las P personas que llegan a la
+clínica ser atendidos.
+Cuando una persona necesita que la atiendan espera a lo sumo 5 minutos a que el médico lo
+haga, si pasado ese tiempo no lo hace, espera 10 minutos y vuelve a requerir la atención del
+médico. Si no es atendida tres veces, se enoja y se retira de la clínica.
+Cuando una enfermera requiere la atención del médico, si este no lo atiende inmediatamente
+le hace una nota y se la deja en el consultorio para que esta resuelva su pedido en el
+momento que pueda (el pedido puede ser que el médico le firme algún papel). Cuando la
+petición ha sido recibida por el médico o la nota ha sido dejada en el escritorio, continúa
+trabajando y haciendo más peticiones.
+El médico atiende los pedidos teniendo dándoles prioridad a los enfermos que llegan para ser
+atendidos. Cuando atiende un pedido, recibe la solicitud y la procesa durante un cierto
+tiempo. Cuando está libre aprovecha a procesar las notas dejadas por las enfermeras.
+
+Los Tasks: Un Medico, E enfermeras, P personas
+Cuerpo de persona: en un for/while, se hace un select or delay llamando al medico. 
+Cuerpo de enfermera: hay un select en un loop que lleva a 2 entrys diferentes por urgencia.
+Medico, entonces, tiene 3 entrys diferentes, uno para pacientes, otro para enfermeros y otro para notas
+
+Procedure Ejercicio4 is
+    Task Medico is
+        ENTRY pac;
+        ENTRY enf;
+        ENTRY nota(S:IN texto);
+    End Medico;
+
+    Task ProxNota;
+
+    Task Escritorio is
+        ENTRY lleganota(T:IN texto);
+        ENTRY proxi(T:OUT texto);
+    End Escritorio;
+
+    Task Type Enfermera;
+    Task Type Paciente;
+
+    ae:ARRAY(1..E) OF Enfermera;
+    ap:ARRAY(1..P) OF Paciente;
+
+    Task Body Medico is
+    Begin
+        loop
+            select
+                ACCEPT pac do
+                    //Atender paciente. delay
+                End pac;
+            or
+                When(pac'count=0) =>     ACCEPT enf do
+                                            //Atender el pedido de la enfermera. delay
+                                        End enf;
+            or
+                When((pac'count=0)and(enf'count=0)) =>      ACCEPT nota(S:IN texto) do
+                                                                ResolverNota(S);
+                                                                //La deja por allí
+                                                            End not;
+            end select;
+        end loop;
+    End Medico; 
+
+    Task Body ProxNota is
+        s: texto;
+    Begin
+        loop 
+            Escritorio.proxi(s);
+            Medico.nota(s);
+        end loop
+    End ProxNota;      
+
+    Task Body Escritorio is
+        s: texto;
+        notas: cola;
+    Begin
+        //llega
+        Select
+            Medico.pac;
+        Or Delay 300
+            Delay 6000
+            select
+                Medico.pac;
+            else
+                null;
+            end select;
+        end select;
+    End Escritorio;   
+
+    Task Body Paciente is
+    Begin
+        loop
+            n=Trabajar();       //delay. genera la nota que deja eventualmente en el escritorio
+            select
+                Medico.enf;
+            else
+                Escritorio.lleganota(n);
+            end select;
+        end loop;
+    End Paciente;
+
+    Task Body Enfermera is
+        n:texto;
+    Begin
+        loop
+            n=Trabajar();       //delay. genera la nota que deja eventualmente en el escritorio
+            select
+                Medico.enf;
+            else
+                Escritorio.lleganota(n);
+            end select;
+        end loop;
+    End Enfermera;
+
+begin
+    null;
+End Ejercicio4;
