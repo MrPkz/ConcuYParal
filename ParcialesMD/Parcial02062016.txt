@@ -1,0 +1,178 @@
+1. Resolver con PMA (Pasaje de Mensajes Asincrónico) la siguiente situación. 
+En una ferretería hay 2 empleados que atienden a C clientes de acuerdo al orden de llegada. 
+El cliente debe esperar a ser atendido para irse. 
+Nota: maximizar la concurrencia.
+
+chan llegada(int,texto);
+chan final[0..P-1](texto);
+
+Process Cliente[id:0..C-1]{
+    texto pedido, fin;
+
+    pedido=GenerarPedido(id);
+    send llegada(id,pedido);
+    receive final[id](fin);
+}
+
+Process Empleado[id:0..1]{
+    int cli; texto ped,res;
+
+    while(true){
+        receive llegada(cli,ped);
+        res=AtenderCliente(ped);
+        send final[cli](res);
+    }
+}
+
+2. Resolver con PMS (Pasaje de Mensajes Sincrónico) la siguiente situación. 
+Una oficina de correo recibe paquetes para dos destinos diferentes (Norte y Sur), 
+existe un encargado que recibe los paquetes y los distribuye según el destino. 
+Existen dos camiones (uno para cada destino) que llegan, 
+cargan todos los paquetes que hay en el momento para el destino correspondiente y los llevan. 
+Nota: maximizar la concurrencia.
+
+Process Cliente[id:0..P-1]{
+    while(true){
+        texto p; int zona;
+        Encargado!(zona,p);
+    }
+}
+
+Process Encargado{
+    int t;
+    texto pak;
+    Queue(texto) Q[0..1];
+
+    while(true){
+        do Cliente[*]?(t,pak) -> Push(Q[t],pak); 
+        [] not empty(Q[0]); Camion[0]?esta() -> while(not empty(Q[0])){Camion[0]!ped(Pop(Q[0]));} Camion[0]!ped(null);
+        [] not empty(Q[1]); Camion[1]?esta() -> while(not empty(Q[1])){Camion[1]!ped(Pop(Q[1]));} Camion[1]!ped(null);
+        od
+    }
+}
+
+Process Camion[id:0..1]{
+    Queue(texto) Pedidos;
+    texto t='hola';
+
+    while(true){
+        //llegada
+        Encargado!esta();
+        while(t!=null){
+            Encargado?ped(t);
+            Push(Pedidos,t);
+        }
+        //Va y deja pedidos
+    }
+}
+
+3. Resolver con ADA la siguiente situación. 
+Un servidor de impresión tiene dos impresoras (color y negra). 
+Existen C clientes que mandan a imprimir al servidor UN documento cada uno 
+(cada uno ya sabe si debe imprimir en color o blanco/negro) y esperan a que se termine de imprimir su documento. 
+El servidor atiende los pedidos de acuerdo a las siguientes condiciones:
+
+Si el documento es en color, lo debe imprimir en la impresora color.
+Si el documento es en blanco y negro, lo debe imprimir en la impresora negra, 
+o bien en la impresora color si no hubiese trabajos en color pendientes por ser impresos.
+Nota: no es necesario que las impresoras y el servidor terminen su ejecución.
+
+Procedure Parcial is
+
+    Task Type Cliente is
+        ENTRY Fin(O:in texto);
+        ENTRY Mid(I:in integer);
+    End Cliente;
+    Task IC;
+    Task IBN;
+    Task Servidor is
+        ENTRY RecibirC(I:in integer; PED:in texto);
+        ENTRY RecibirBN(I:in integer; PED:in texto);
+        ENTRY BuscaIC(DOC:out texto; CLI:out integer);
+        ENTRY BuscaIBN(DOC:out texto);
+    End Servidor;
+
+    ac:ARRAY(1..C) OF Cliente;
+
+    Task Body Cliente is
+        doc,res:texto;
+        id,tipo:integer;   
+    begin 
+        Accept Mid(I:in int) do
+            id:=i;
+        End Mid;
+        texto:=GenerarPedido();
+        if(tipo=0)then
+            Servidor.RecibirC(id,doc);
+        else 
+            Servidor.RecibirBN(id,doc);
+        end if;
+        Accept Fin(O:in texto) do
+            res:=O;
+        End Fin;
+    End Cliente;
+
+    Task Body IC is
+        doc,res:texto;
+        cli:integer;
+    begin  
+        loop
+            Servidor.BuscaIC(doc);
+            res:=Imprimir(doc,cli);
+            ac(cli).Fin(res);
+        end loop;
+    End IC;
+
+    Task Body IBN is
+        doc,res:texto;
+        cli:integer;
+    begin  
+        loop
+            Servidor.BuscaIBN(doc);
+            res:=Imprimir(doc,cli);
+            ac(cli).Fin(res);
+        end loop;
+    End IBN;
+
+    Task Body Servidor is
+        cli:integer; doc:texto;
+    begin
+        loop
+            select
+                Accept BuscaIC(DOC:out texto; CLI:out integer) do
+                    if(RecibirC'count>0) then
+                        Accept RecibirC(I:in integer; PED:in texto) do
+                            cli:=I;
+                            doc:=PED;
+                        End RecibirC;
+                        DOC:=doc;
+                        CLI:=cli;
+                    elsif (RecibirBN'count>0) then
+                        Accept RecibirBN(I:in integer; PED:in texto) do
+                            cli:=I;
+                            doc:=PED;
+                        End RecibirBN;
+                        DOC:=doc;
+                        CLI:=cli;
+                    end if;
+                End BuscIC;
+            or
+                Accept BuscaIC(DOC:out texto; CLI:out integer) do
+                    if(RecibirBN'count>0) then
+                        Accept RecibirC(I:in integer; PED:in texto) do
+                            cli:=I;
+                            doc:=PED;
+                        End RecibirC;
+                        DOC:=doc;
+                        CLI:=cli;
+                    end if;
+                End BuscIC;
+            end select;
+        end loop;
+    End Servidor;
+
+begin
+    for i in 1..C loop
+        ac(i).Mid(i);
+    end loop;
+End Parcial;
