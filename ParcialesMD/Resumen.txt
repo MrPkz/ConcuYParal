@@ -1,0 +1,71 @@
+PMA:
+Se arman chans describiendo los tipos de datos que se pasan; 
+según la operacion send o receive el parámetro es de entrada o salida.
+Se ordenan por llegada!!
+Usualmente 2 procesos utilizan 2 canales:
+En relaciones master-slave, hay un arreglo con un channel para cada slave
+(Y hará falta pasar el parámetro)
+Los receives son atómicos, eso implica que pueden usarlos más de un proceso a la vez
+También se les puede aplicar el empty a un canal para ver si hay mensajes
+    Cuando hay +1 proceso, el empty resulta polemico porque se lo roban entre sí ==> Admin
+    Este admin procesa las llegadas y le manda a cada salida según corresponda -> +1 channel, 1 x proceso
+    Ya el empleado o master inicial no usa el empty, solo el coordi
+Cuando hay prioridades, SE ARMAN 2 CANALES DISTINTOS
+    Tener en mente devolver nulo cuando no entra a ninguno
+    If de multiples alternativas, PONELE. No es necesario
+        Se le puede poner condiciones para garantizar prioridad
+        Se pone un Semáforo para no hacer busy waiting generado en el IF
+(Arreglos se declaran como 1..n)
+
+PMS:
+Los canales/puertos NO SE DECLARAN. Es proceso, ?/! y el nombre del puerto + params.
+Guardas: B; C -> S
+    Sale del if/do cuando todas las B son FALSAS
+    Sino, se queda bloqueada esperando algo bueno o malo
+    En NO Determinístico no se usan envíos en la guarda. Solo recepciones
+    A lo sumo, se descompone el mensaje en 2
+Los mensajes son bloqueantes y NO se acumulan por orden de llegada.
+Siempre que el trabajo sea asincrónico, o requiera orden de los procesos, va ADMIN
+La comunicación ahora es a procesos particulares, no en general
+    Al menos en el envío siempre es así
+    En la recepción, puede elegirse cualquiera de un arreglo con [*]
+    Esto a veces implica mandar el id
+Al tener varios masters eso implica mandar su ID al Admin
+
+ADA:
+Hay un gran programa que contiene todo.
+Ese programa contiene los Tasks, o los Tasks Types.
+Estos son los procesos, analogamente. NO hay V Compartidas
+Cada proceso tiene su declaracion (Task, Task Type + Arreglo de Declaracion), y su Body
+Hay un Begin en el programa que, en el peor de los casos, le asigna IDs a Tasks que necesiten saberlo
+    Los Tasks por si solos NO saben su ID!!!
+Cada Tasks tiene funciones por las cuales se los llama
+    Otros procesos pueden comunicarse por esas funciones
+    Las funciones tienen parametros que pueden ser IN,OUT, IN OUT
+    Tipos de datos: integer,text, boolean
+En el body de un task se pueden tener variables propias
+Para llamar a un Entry, se lo llama nomtask.entry(par1,par2)
+Para recibirlo, se escribe ACCEPT nomtask(parametrosdeclarados), y el cuerpo del Accept
+    Esto es el Rendezvous
+    Es una comunicación BILATERAL, ambos quedan varados en el Accept
+    Utilizar esto cuando se pueda en vez de 2 mensajes.
+    El problema es que traba tambien al proceso que hace el accept de hacer otras cosas
+Hay SELECTS para sentencias guardadas:
+    Esta el select normal, con 'or'
+    El select 'else', que si no se da el accept en el momento sigue en el codigo luego del else
+    El select 'or delay' que espera ese tiempo y luego sigue con el alternativo
+Recordar que los parametros luego del accept desaparecen, hay que guardarlos
+Para meterle condiciones al select, se utiliza el when() para este wait selectivo
+Luego de un accept en el select, se pueden seguir con sentencias abajo de ese accept solo en ese camino
+Dentro del task, se puede ver cuantas esperas hay en cada entry con nomtask'count
+    Las esperas SE GUARDAN EN ORDEN DE llegada
+    No tiene sentido usar el when para chequear si se puede un accept
+Al haber prioridad, hay distintos Entrys para cada tipo de cliente
+Cuando hay más de un master, entra en juego el admin
+    Al usar el admin, hay que descomponer el llamado en 2: un entry y otro entry/un accept
+    Para saber a qué proceso llamar, se suele necesitar el ID del slave, por lo que se le asigna desde el main
+Se pueden anidar Accepts sin problema
+Usualmente, es preferible que el Admin reciba accepts y no mande entrys, 
+    mandando entrys se puede llegar a colgar una tarea de esa secuencia
+    De ese modo, manda el slave y si se cuelga es problema de él,
+    Sin afectar así al sistema.

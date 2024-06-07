@@ -1,0 +1,98 @@
+1. Resolver con PMS. En la estación de trenes hay una terminal de SUBE que debe ser usada por P personas de 
+acuerdo con el orden de llegada. Cuando la persona accede a la terminal, la usa y luego se retira para dejar al 
+siguiente. Nota: cada Persona una sólo una vez la terminal. 
+
+Process Persona[id:0..P-1]{
+    Admin!llego(id);
+    Admin?use();
+    //usando
+    Admin!termino();
+}
+
+Process Admin{
+    int actual;
+    Queue(int) Q;
+    bool libre=true;
+    int cant=0;
+
+    while(cant<P){
+        if Persona[*]?Llego(actual) =>  if(libre){                       //OJO PORQUE ES IF Y NO DO
+                                                libre=false;
+                                                Persona[actual]!use();
+                                            }else{
+                                                Push(Q,actual);
+                                            }
+        [] Persona[*]?termino() =>          if(!empty(Q)){
+                                                Persona[Pop(Q)]!use();
+                                            }else{
+                                                libre=true;
+                                            }
+                                            cant++;
+        fi
+    }
+}
+
+2. En un negocio de cobros digitales hay P personas que deben pasar por la única caja de cobros para realizar el pago de 
+sus boletas. Las personas son atendidas de acuerdo con el orden de llegada, teniendo prioridad aquellos que deben 
+pagar menos de 5 boletas de los que pagan más. Adicionalmente, las personas embarazadas y los ancianos tienen 
+prioridad sobre los dos casos anteriores. Las personas entregan sus boletas al cajero y el dinero de pago; el cajero les 
+devuelve el vuelto y los recibos de pago. Implemente un programa que permita resolver el problema anterior usando 
+ADA. 
+
+Procedure Negocio is
+    Task Type Persona;
+    Task Server is
+        ENTRY Priority(I:in int);
+        ENTRY Few(I: in int);
+        ENTRY Normal(I: in int);
+        Entry Factura(I:in text; O:out text);
+    End Server;
+
+    ap:ARRAY(1..P) OF Persona;
+
+    Task Body Persona is
+        prior: bool;
+        fact:integer; //Ya conoce ambos
+        v,r:array(1..fact) of text;
+    begin
+        if(prior) then
+            Server.Priority(fact);
+        elsif(fact<5)then
+            Server.Few(fact);
+        else
+            Server.normal(fact);
+        end if;
+        for i in 1..fact loop
+            Server.Factura(v(i),r(i));
+        end loop;
+    End Persona;
+
+    Task Body Server is
+        cant,cantAux:integer;
+    begin
+        cant:=0;
+        while(cant<P) loop
+            select  Accept Priority(I:in int) dos
+                        cantAux:=I;
+                    End Priority;
+            or when(Priority'count=0) =>    Accept Few(I:in int) dos
+                                                cantAux:=I;
+                                            End Few;
+            or when((Priority'count=0)&&(Few'count=0)) =>   Accept Normal(I:in int) dos
+                                                                cantAux:=I;
+                                                            End Normal;
+
+            end select;
+
+            for i in 1..fact loop
+                Accept Factura(I:in text; O:out text) do
+                    O:=Atender(I);
+                End Factura;
+            end loop;
+
+            cant:=cant+1;
+        end loop;
+    End Server;
+begin
+    Null;
+End Negocio;

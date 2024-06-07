@@ -1,0 +1,125 @@
+1. Resolver con PASAJE DE MENSAJES ASINCRÓNICO (PMA) el siguiente problema. En un negocio de cobros digitales 
+hay P personas que deben pasar por la única caja de cobros para realizar el pago de sus boletas. Las personas son 
+atendidas de acuerdo con el orden de llegada, teniendo prioridad aquellos que deben pagar menos de 5 boletas de 
+los que pagan más. Adicionalmente, las personas embarazadas tienen prioridad sobre los dos casos anteriores. Las 
+personas entregan sus boletas al cajero y el dinero de pago; el cajero les devuelve el vuelto y los recibos de pago.
+
+chan entregoP(int,int,texto);
+chan entregoN(int,int,texto);
+chan recibo[0..P-1](int,texto);
+chan llegue;
+
+Process Persona[id:0..P-1]{
+    int cantboletas,dinero,vuelto;
+    texto boletas,rec;
+
+    GenerarBoletas(cantboletas,dinero,boletas);
+    if(cantboletas<5){
+        send entregoP(id,dinero,boletas);
+    }else{
+        send entregoN(id,dinero,boletas);
+    }
+    send llegue();
+    receive recibo[id](vuelto,rec);
+}
+
+Process Cajero{
+    int cant=0;
+    int money,vuelto,id;
+    texto boletas,recibos;
+
+    while (cant<P){
+        receive llegue();
+        if (not empty(entregoP)) ->
+            receive entregoP(id,money,boletas);
+        [] (empty(entregoP)&&(not empty(entregoN))) ->
+            receive entregoN(id,money,boletas);
+        fi
+        HagoPago(money,boletas,recibos,vuelto);
+        send recibo[id](vuelto,recibos);
+        cant++;
+    }
+}
+
+
+2) Resolver con ADA el siguiente problema. La oficina central de una empresa de venta de indumentaria debe calcular 
+cuántas veces fue vendido cada uno de los artículos de su catálogo. La empresa se compone de 100 sucursales y cada 
+una de ellas maneja su propia base de datos de ventas. La oficina central cuenta con una herramienta que funciona de la 
+siguiente manera: ante la consulta realizada para un artículo determinado, la herramienta envía el identificador del 
+artículo a cada una de las sucursales, para que cada uno de éstas calcule cuántas veces fue vendido en ella. Al final del 
+procesamiento, la herramienta debe conocer cuántas veces fue vendido en total, considerando todas las sucursales. 
+Cuando ha terminado de procesar un artículo comienza con el siguiente (suponga que la herramienta tiene una función 
+generarArtículo que retorna el siguiente ID a consultar). Nota: maximizar la concurrencia. Supongo que existe una 
+función ObtenerVentas(ID) que retorna la cantidad de veces que fue vendido el artículo con identificador ID en la base 
+de datos de la sucursal que la llama. 
+
+
+procedure empresa is 
+
+task type sucursal;
+
+task oficina is
+    entry darId(id: out int);
+    entry cantidad(cant: in int);
+    entry terminaProducto(cantT: out int);
+end oficina;
+
+
+sucursales: array(1..100) of sucursal;
+
+
+task body sucursal is
+    id: int;
+    cantP: int;
+    cantidadTot: int;
+begin
+    loop
+        oficina.darId(id);
+        cantP = ObtenerVentas(id);
+        oficina.cantidad(cantP);
+        oficina.terminaProducto(cantidadTot);
+    end loop
+end sucursal
+
+task body oficina is
+    idA: int;
+    suma: int;
+begin
+    loop
+        idA := obtenerId();
+        suma := 0;
+        for(i in 1..200) loop
+            select
+                accept darId(id: out int) do
+                    id := idA;
+                end darId
+            or
+                accept cantidad(cant: in int) do
+                    suma+= cant;
+                end cantidad
+            end select
+        end loop
+        for(1 in 1..100) loop
+            accept terminaProducto(cantT: out int) do
+                cantT := suma;
+            end terminaProducto
+        end loop
+    end loop
+end oficina
+
+begin
+    null;
+end empresa;
+
+
+
+
+
+
+
+
+Procedure Oficina is
+    Task Central is
+
+    End Central;
+End Oficina;

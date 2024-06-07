@@ -86,14 +86,16 @@ Procedure Ejercicio4 is
 
     Task Body Paciente is
     Begin
-        loop
-            n=Trabajar();       //delay. genera la nota que deja eventualmente en el escritorio
-            select
-                Medico.enf;
+        select
+            Medico.pac;
+        or delay 300
+            delay 600;
+            select 
+                Medico.pac;
             else
-                Escritorio.lleganota(n);
+                null;
             end select;
-        end loop;
+        end select;
     End Paciente;
 
     Task Body Enfermera is

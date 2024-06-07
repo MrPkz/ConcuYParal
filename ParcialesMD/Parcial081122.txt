@@ -1,0 +1,70 @@
+1. Resolver con PMA el siguiente problema. Se debe modelar el funcionamiento de una casa de venta de repuestos 
+automotores, en la que trabajan V vendedores y que debe atender a C clientes. El modelado debe considerar que: 
+(a) cada cliente realiza un pedido y luego espera a que se lo entreguen; y 
+(b) los pedidos que hacen los clientes son tomados por cualquiera de los vendedores. 
+Cuando no hay pedidos para atender, los vendedores aprovechan para 
+controlar el stock de los repuestos (tardan entre 2 y 4 minutos para hacer esto). Nota: maximizar la concurrencia.  
+
+Hay V vendedores, C clientes y un admin
+El cliente manda por un canal su pedido (string) y recibe en otro (vector de string) el resultado
+Admin toma este canal y lo va a hacer cuando de los vendedores les manden solicitud por otro canal!!
+Luego, en un cuarto canal reciben los vendedores el ID y string del cliente
+
+chan LlegaCli(int,string);
+chan FinCli[0..C-1](string);
+chan Estoy(int);
+chan Proximo[0..V-1](int,string);
+
+Process Cliente[id:0..C-1]{
+    texto pedido;       //Ya lo dispone
+    texto resultado;
+
+    send LlegaCli(id,pedido);
+    receive FinCli[id](resultado);
+}
+
+Process Vendedor[id:0..V-1]{
+    int ca;
+    texto ped,res;
+
+    while(true){
+        send Estoy(id);
+        receive Proximo[id](ca,ped);
+        if(proximo!=-1){
+            res=resolver(ped);
+            send FinCli[ca](res);
+        }
+        else delay random(120,240);
+    }
+}
+
+Process Admin{
+    int c,v; string p;
+
+    while(true){
+        receive Estoy(v);
+        if(!empty(LlegaCli)){
+            receive LlegaCli(c,p);
+        }else{
+            c=-1; p=null;
+        }
+        send Proximo[v](c,p);
+    }
+}
+
+2. Resolver con ADA el siguiente problema. Se quiere modelar el funcionamiento de un banco, al cual llegan 
+clientes que deben realizar un pago y llevarse su comprobante. Los clientes se dividen entre los regulares y los 
+premium, habiendo R clientes regulares y P clientes premium. Existe un único empleado en el banco, el cual 
+atiende de acuerdo al orden de llegada, pero dando prioridad a los premium sobre los regulares. Si a los 30 
+minutos de llegar un cliente regular no fue atendido, entonces se retira sin realizar el pago. Los clientes premium 
+siempre esperan hasta ser atendidos. 
+
+Procedure Banco is
+    //Hay que tener un Task para el empleado y 2 task type para cada tipo de cliente; van separados por la forma de hacer el select después
+    //Esto último se haría desde el código del begin
+    //En el task, hacen el llamado al ENTRY del server que les corresponde en el cual esperan ya el resultado. No hay admin así que es solo eso
+    //Dentro del server, en un while true se hace un select que usa los count de los entrys para dar la prioridad. Dentro del accept hace el tramite
+    //Además, en el cliente se hace con un select or delay 30minutos en caso normales; los clientes premium es común
+
+    //La verdad me dio paja hacer el código, mildis
+End Banco;
